@@ -77,20 +77,32 @@ module Loog
     # @param [String] level The level of logging
     # @param [String] formatter The formatter
     def initialize(level: Logger::DEBUG, formatter: Loog::SHORT)
-      super($stdout, level: level, formatter: formatter)
       @lines = []
+      super(Device.new(@lines), level: level, formatter: formatter)
     end
 
     def to_s
       @lines.map { |s| s.dup.encode('UTF-8', invalid: :replace, undef: :replace, replace: '?') }.join
     end
 
-    private
+    # In-memory log device, which receives fully formatted lines
+    # from the Logger and accumulates them in the given array.
+    class Device
+      # Ctor
+      # @param [Array] lines Where to accumulate formatted lines
+      def initialize(lines)
+        @lines = lines
+      end
 
-    # rubocop:disable-next Elegant/GoodMethodName
-    def format_message(severity, time, progname, msg)
-      @lines.push(super)
-      ''
+      # Capture one fully formatted line
+      # @param [String] line The formatted line coming from the Logger
+      def write(line)
+        @lines.push(line)
+        line.length
+      end
+
+      # Do nothing, in-memory lines have nothing to close
+      def close; end
     end
   end
 end

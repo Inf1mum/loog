@@ -64,6 +64,25 @@ class LoogTest < Minitest::Test
     assert_match(/INFO\s+hey, custom/, b.to_s)
   end
 
+  def test_formatter_from_ctor_is_applied
+    b = Loog::Buffer.new(formatter: Loog::FULL)
+    assert_silent do
+      b.info('hey, ctor')
+    end
+    assert_match(/INFO\s+hey, ctor/, b.to_s)
+  end
+
+  def test_formatter_switch_keeps_buffering
+    b = Loog::Buffer.new(formatter: Loog::FULL)
+    assert_silent do
+      b.info('formatted by ctor')
+      b.formatter = Loog::COMPACT
+      b.info('formatted by reassignment')
+    end
+    assert_match(/INFO\s+formatted by ctor/, b.to_s)
+    assert_equal("formatted by reassignment\n", b.to_s.lines.last)
+  end
+
   def test_handles_invalid_utf_without_exception
     broken = "\xFF\xFE\x12"
     Loog::VERBOSE.info(broken)
